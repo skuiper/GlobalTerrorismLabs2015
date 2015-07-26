@@ -1,0 +1,163 @@
+---
+title: "Terrorism and Weapons of Mass Destruction"
+output: word_document
+header-includes: \setlength\parindent{24pt}
+---
+
+###Introduction  
+
+As a result of the events of 9/11, as well as the ongoing accounts of acts of terrorism in the media, we have seen rising national concerns about terrorists using sophisticated weapons (LaFree, Dugan, & Miller., 2015, p. 99). In response to these concerns, the U.S. government has invested more resources in counterterrorism measures, shifting the focus of the FBI from traditional crimes to counterterrorism after 9/11 (LaFree, Dugan, & Miller, 2015, p. 5). Beyond internal measures, Saddam Hussein's association with terrorists and the threat of weapons of mass destruction (WMDs) were the main reasons given in the rationale for the invasion of Iraq in 2003 (Otterman, 2003). An ongoing international concern is the damage terrorists could cause if they obtain WMDs (NATO, 2015). However, the definition of WMDs is unclear (Kaszeta, 2014), so we will look at a more specific group of weapons with the capacity to cause significant damages: chemical, biological, radiological, and nuclear (CBRN) weapons. 
+
+In this activity, we will study the extent to which CBRN weapons have been used so far, and analyze whether or not their past use fits with our perceptions. Have CBRN weapons been used successfully in the past? Which weapons are more historically dangerous (more fatalities, injuries) in the hands of terrorists, common weapons like firearms and explosives or advanced weapons like chemical, biological, and nuclear weapons? What are the implications of past usage of CBRN weapons compared to other weapons in determining our priorities in counter-terrorism policies? 
+
+To answer these questions, we will use the [Global Terrorism Database](http://www.start.umd.edu/gtd) (GTD). The GTD contains information about more than 140,000 terrorist incidents occurring between 1970 and 2014.^1^  The data in the GTD are gathered from news reports, which means they might not be the most comprehensive. The team managing the database tries to verify all the information they gather through multiple news sources (LaFree, Dugan, & Miller, 2015). Because of the large quantity of information contained in the GTD, we constructed an [app](http://rstudio.grinnell.edu/Global%20Terrorism%20Plots/) to help visualize the data. 
+
+###Part A: Using Scatterplots to Identify Extreme Events.    
+
+#####**Description of the Scatterplot App**
+
+Go to the Grinnell College RStudio site, http://rstudio.grinnell.edu/, and select the [Global Terrorism Plots](http://rstudio.grinnell.edu/Global_Terrorism_Plots/) (it may take a few seconds to open). In the scatterplot, each point represents a particular country and year (referred to as a **country-year**), such as all the incidents that occurred in the US in 1984. 
+
+In the **X-axis Variable** dropdown menu  you can choose among several variables collected from [the Gapminder website](http://www.gapminder.org/), http://www.gapminder.org/, including: 
+
+  - *Population (millions)*: The number of people in a country for a given year (in millions).
+  - *GDP per Capita*: This value is a measure of the amount of economic production that takes place in a country divided by the population.
+  - *Life Expectancy*: The average number of years a newborn child would live if current mortality patterns were to stay the same.
+  - *Unemployment Rate (Female)*: Percentage of women, age 15 or older, who are unemployed. Only has data from 1991-2007.
+  - *Labor Rate*: The percentage of the population, age 15 or older, who are participating in the labor force. Only has data from 1980 to 2007.
+  - *Children per Woman*: The average number of children a woman is expected to birth.
+  - *Electricity per Capita*: How much electricity is generated per person in Kilowatt hours. No data for 2012, 2013.
+  - *Child Mortality Rate*: The number of newborns to five year-olds dying per 1,000 born.
+
+The **Y-axis Variable** options are from the GTD database:
+
+  - *Incidents*: The total number of successful and unsuccessful terrorist attacks in a country-year.
+  - *Fatalities*: The total number of deaths caused by terrorist attacks in a given country-year. This includes deaths of perpetrators and is an average of the numbers given by the news reports about the event.
+  - *Wounded*: The total number of individuals wounded by terrorist attacks in a country-year. Like fatalities, it includes perpetrators injured and is calculated based on the news reports of the event.
+  
+Additionally, there are other options in the scatterplot app that allow you to change the display or restrict the data based on your question of interest:  
+
+  - **Type of Plot**: The *ggvis* version of the scatterplot allows us to hover over points and see the country, year, X-variable, and Y-variable of the data point in question. In contrast, *ggplot* has a **Facet By** menu that allows us to create distinct plots by:
+     + *Attack Type*: (Hostage Taking, Assault, Bombing/Explosion, Assassination, Facility/Infrastructure, Hijacking or Unknown) 
+     + *Target Type*: (Armed Forces, Government, Private Citizens & Property, Business, Infrastructure, Educational/Religious Organizations, or Other/Unknown)
+     + *Weapon Type*: (CBRN, Firearms, Explosives/Bombs/Dynamite, Melee, Incendiary, or Other/Unknown)
+     + *Region*: (Middle East & North Africa, Sub-Saharan Africa, East Asia & Pacific, South Asia, Europe & Central Asia, North America, or Latin America & Caribbean)
+     + *Success*: A successful attack means that an act of terror was committed, not that the terrorists succeeded in their goal.
+     + *Religion*: The primary religion of each country
+  - **Color By**: Gives the options of coloring the points by *Region* or *Religion*.
+  - **Success Only**: When checked, only successful incidents are displayed. 
+  - **Year of Incidents**: Allows you to control the years for which incidents are displayed. 
+  - In the **Filters** tab (next to the **Axes** tab), you have the option to restrict the data to a particular *Attack Type, Target Type, Weapon Type, Region* and *Success*. In this tab, you can also restrict the data to only country-years with a certain number of incidents. For example, when the minimum number of incidents is set to 100, only country-years where there were 100 or more attempted terrorist attacks will be included. 
+
+##### **Using Scatterplots**
+
+Before starting Questions 1-7, make sure the scatterplot is set with the following options:
+
+  -  **X-axis variable**: *GDP Per Capita*
+  -  **Y-axis variable**: *Incidents*
+  -  **Type of Plot**: *ggvis* 
+  -  **Color By**: *None*
+  -  **Success Only**: should not be checked
+  -  **Year of Incidents**: 1970-2013
+  -  **Filter by Weapon Type**: *CBRN* (so that we are only looking at attacks made with CBRN weapons). 
+  -  **Minimum number of Incidents**: 0 
+
+1) Notice that there are a fair number of points, showing that attacks with CBRN weapons do happen: there are several countries with one to five CBRN incidents, and a handful with 5 to 15 incidents, in the same year. Hover over some of the points. What is the largest number of attempted CBRN attacks in a particular country-year? What country and year did these attempted CBRN attacks occur?
+    
+2)  Choose *Region* in the **Color By** menu. If these graphs appear too cluttered, you can select the *ggplot* option and select *Region*  in the **Facet By** menu. Does this suggests that counter-CBRN policies may need to take place on a global scale or are there only a few regions that have experienced CBRN attacks?
+
+3)  Go back to the *ggvis* option. Select *Fatalities* in the **Y-axis variable** menu. We can see that most incidents have zero fatalities. Identify the two country-years with the most fatalities.
+
+4) Go to [the GTD website](http://www.start.umd.edu/gtd) (http://www.start.umd.edu/gtd). Choose **Advanced Search** in the box on the left side of the screen. Use the filters to find what events caused the fatalities in Uganda in 2000 and Columbia in 1999. After searching the GTD, we find that all the deaths in the Uganda attack were due to a mass poisoning. What was the cause of the fatalities in the Columbia attack?
+
+5) Overall, the average number of fatalities for an attack using a CBRN weapon is one or two people. Clearly, there is much more potential for harm than there has been so far. Which subtype of CBRN weapon (chemical, biological, radiological, or nuclear) had the most deadly attacks?
+
+6) Go back to the Global Terrorism Scatterplot and select *Wounded* for the **Y-axis variable** menu. Are CBRN attacks more likely to injure people or cause fatalities? Identify the three country-years with the most injuries on this graph. How many people were injured in each of these CBRN related attacks? 
+7) Use the advanced search at the GTD website(http://www.start.umd.edu/gtd) to find the event(s) which caused the injuries in these attacks. We find that the attack accounting for the majority the injuries in Japan was a single attack on a subway system using the nerve gas sarin (classified as a chemical weapon), attributed to the doomsday cult Aum Shinrikyo. The 1016 injuries in Afghanistan in 2012 were primarily caused by a series of attacks: chemical poisonings perpetrated by the Taliban against a variety of targets. What was the primary cause of the injuries in the 1984 attacks in the US? This information reinforces what we found with fatalities: even though biological, radiological, and nuclear weapons threaten to do damage on a massive scale, the most successful attacks with CBRN weapons use chemical or biological weapons.
+
+From these scatterplots, we've learned that attacks with sophisticated weapons do happen, and on occasion they can cause a considerable number of deaths and 
+injuries. However, we have yet to see any attacks using CBRN weapons such as 
+plagues, dirty bombs, and nuclear strikes that have caused mass injuries or 
+fatalities.
+
+###Part B: Using Stacked-Line Graphs to Compare Weapon Types
+
+Another type of plot at our disposal is the stacked-line graph; it allows us to gain a better sense of how CBRN weapons compare to other weapons.  The stacked-line graph takes the data from the GTD, organizes it by year and the chosen category (*region, religion, weapon, attack type, target,* or *success*), and tallies up the number of incidents, fatalities, or wounded in the given year and category. The Y-axis can be changed between percentage and absolute count. 
+
+8) First, select the *Stacked-line Plot* tab at the top of the app. Select the following parameters: 
+    + **Y-Axis Variable**: *Incidents*
+    + **By Percentage (%)**
+    + **Color By**: *Weapon Type*
+    + **Facet By**: *None*
+    + **Year of Incidents** 1970-2014
+    
+    Notice that use of CBRN weapons is rare (colored by the little bit of light blue at the bottom of the graph), usually less than 1% of all incidents. To better emphasize the rarity of CBRN weapons you can select *Weapon Type* in the **Facet By** menu and *By Count (#)* instead of the *By Percentage (%)*. The number of CBRN attacks are so low, in comparison to the others, that they are nearly invisible. Does this support the media image that terrorists regularly rely on sophisticated weapons? Which two weapon types are used most frequently in terrorist attacks?
+
+9) Select *Fatalities* in the **Y-axis Variable** menu, *None* in the **Facet By** menu, and the *By Percentage (%)* option. Notice there is a spike in CBRN fatalities in 2000. Based on your scatterplots in Part A, identify which event caused this spike. This event accounts for approximately 5% of the terrorism-related fatalities in that year. While 200 deaths are hardly insignificant, it is fewer than an attack like 9/11 which was carried out with box-cutters (9/11 is classified as a melee attack) (LaFree, Dugan, & Miller, 2015).
+
+10)  We can also see that CBRN incidents usually result in less than 1% of fatalities. Given that CBRN incidents also represent about 1% of incidents, what can we can conclude about the deadliness (fatalities per incident) about past attacks with CBRN weapons compared to other weapon types? In these graphs we see that more common weapon types currently cause a much larger loss of life. 
+
+11) Select *Wounded* in the **Y-axis** menu. Looking at injuries, we see a few spikes in the CBRN category, most notably the previously identified attack by Aum Shinrikyo, which accounted for 38.5% of the world's injuries from terrorist attacks that year. This incident hints that there is still potential for CBRN weapons to do the damage for which they are feared. However, as we see, CBRN weapons most often account for only a minimal amount of deaths and injuries, whereas explosives and firearms result in the majority of deaths and injuries. 
+
+###Part C: Drawing Conclusions from our Graphs
+
+These graphs and the GTD website allowed us to analyze CBRN attacks. We see that they typically resulted in a low number of deaths and injuries, but occasionally produced a considerable number of deaths (200) or injuries (~5500). However, these numbers are far from the millions threatened.
+
+It is worth noting that the most harmful CBRN attacks used chemical weapons (with one exception),2 informing us that attacks with biological, radiological, or nuclear weapons were not attempted or failed. In *Putting Terrorism in Context*, LaFree, Dugan, & Miller confirm that few organizations are willing to adopt biological or chemical weapons (2015, p. 189) and that there are only 13 recorded cases of radiological weapons (out of the then 113,000 cases). There are also no cases of nuclear weapons, in part due to the difficulty of obtaining and weaponizing the materials involved (2015, p. 191).
+
+Using the stacked-graph plot, we were able to see that in terms of incidents, fatalities, and injuries, CBRN weapons are relatively rare compared to firearms and explosives. However, we saw that the attack by Aum Shinrikyo was damaging enough to result in over 1/3 of all the injuries in the year it took place, suggesting that CBRN weapons do have the potential to do significant damage. NATO's webpage "Weapons of Mass Destruction" reinforces that the use of CBRN weapons could produce "incalculable consequences for global stability and prosperity" (2015).
+
+It is important to correct the image that terrorists routinely use sophisticated weapons. Resources are primarily needed in stopping terrorism using common weapons (explosives and firearms), which are currently causing considerably more deaths and injuries. However, given their high potential for damage, we can conclude that it is well worth taking preventative counterterrorism measures against future CBRN attacks.
+
+Since there have been just a few CBRN attacks, it does mean that the first major attack will be difficult to predict. One potential avenue for indirectly anticipating major attacks is looking at what causes terrorist organizations to escalate the caliber of weapons they use. For example, terrorist organizations on the brink of defeat or with doomsday beliefs may be more inclined to use superweapons (Laqueur, 1996). Another avenue is performing case studies on the few organizations which made attempts, similar to the case studies in the Global Terrorism Index report (Institute for Economics and Peace, 2014) on the most dangerous terrorist organizations in 2014. It may be advisable to investigate each type of weapon separately, since patterns of attack with chemical weapons are unlikely to resemble biological weapons which are unlikely to resemble radiological or nuclear weapons. Another sophisticated and highly dangerous weapon raised by Laqueur (1996) is cyber-terrorism, which could cause as much damage as CBRN weapons without the difficulty in procuring and processing materials. Unfortunately, data on cyber-terrorism is not currently available in the GTD.
+
+### Part D: On your Own
+
+Explore the plots and graphs within this app. Do you see any interesting patterns when trying different colors, filters, or facets for particular variables of interest? Submit one plot with a brief interpretation. If you need a place to start, read the Executive Summary section of the Global Terrorism Index report (Institute for Economics and Peace, 2014) (http://www.visionofhumanity.org/sites/default/files/Global%20Terrorism%20Index%20Report%202014_0.pdf) and look for interesting claims that you can investigate.
+
+##### **Endnotes**
+^1^ For an incident to be categorized as a terrorist attack and included in this dataset, each incident must meet all three of these attributes 1) The incident must be intentional, 2) The incident must entail some level of violence or immediate threat of violence and 3) The perpetrators of the incidents must be sub-national actors. In addition each incident must include at least two of the following three criteria 1) The act must be aimed at attaining a political, economic, religious, or social goal, 2) There must be evidence of an intention to coerce, intimidate, or convey some other message to a larger audience (or audiences) than the immediate victims and 3) The action must be outside the context of legitimate warfare activities (see the [GTD Codebook]( http://www.start.umd.edu/gtd/downloads/Codebook.pdf) for more details). Data files from 1993 were lost by the company originally managing the database, so data from that year are missing.
+
+^2^The one exception was the salmonella attack (classified as biological) by the Rajneeshee Cult in Oregon in an attempt to sway an election which injured several hundred people.
+
+^3^ This activity was created by Ying Long, Zachary Segall, and Shonda Kuiper. All rights reserved. Date: 7/25/2015
+
+
+##### **References**      
+
+The Central Intelligence Agency. (2014) *FIELD LISTING :: RELIGIONS* Retrieved from https://www.cia.gov/library/publications/resources/the-world-factbook/fields/2122.html#198.
+
+Gapminder. (2015). *Children per woman (total fertility)* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+Gapminder. (2015). *Child mortality (0-5 year-olds dying per 1,000 born)* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+Gapminder. (2015). *Income per person (GDP/capita, PPP$ inflation-adjusted)* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+Gapminder. (2014). *Life expectancy at birth, with projections* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+Gapminder. (2014). *Population, total* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+Institute for Economics & Peace. (2014). *Global Terrorism Index 2014: Measuring and Understanding the Impact of Terrorism*. Retrieved from http://www.visionofhumanity.org/sites/default/files/Global%20Terrorism%20Index%20Report%202014_0.pdf.
+
+International Labour Organization. (2015). *Aged 15+ labour force participation rate (%)* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+International Labour Organization. (2015). *Females aged 15+, unemployment rate (%)* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+Kaszeta, D. (2014, July 29). It is Time to Retire 'Weapons of Mass Destruction'. *Cicero Magazine* Retried from http://ciceromagazine.com/opinion/it-is-time-to-retire-weapons-of-mass-destruction/. 
+
+LaFree, G., Dugan, L., & Miller, E. (2015). *Putting terrorism in context: Lessons from the Global Terrorism Database*. New York, NY: Routledge.
+
+Laqueur, W. (1996). Postmodern Terrorism. *Foreign Affairs, Vol. 75*(no. 5), 
+pp. 24-37. 
+
+National Consortium for the Study of Terrorism and Responses to Terrorism 
+(START). (2013). Global Terrorism Database [Data file]. Retrieved from 
+http://www.start.umd.edu/gtd.
+
+NATO. (2015). *Weapons of Mass Destruction*. Retrieved from http://www.nato.int/cps/en/natohq/topics_50325.htm.
+ 
+Otterman, S. (2003, April 21). IRAQ: America's Rationale for War. *Backgrounder* Retrieved from http://www.cfr.org/iraq/iraq-americas-rationale-war/p7693#p1.
+
+The World Bank. (2014). *Electricity use, per person* [Data file]. Retrieved from http://www.gapminder.org/data/.
+
+
