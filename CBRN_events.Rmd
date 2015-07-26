@@ -1,0 +1,254 @@
+---
+title: "Terrorism and Weapons of Mass Destruction (Solutions)"
+output: word_document
+header-includes: \setlength\parindent{24pt}
+---
+
+```{r message=FALSE, warning=FALSE}
+#Required Files
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(grid)
+library(scales)
+
+#Custom color scheme for graphs
+customColors <- c("#a6cee3", "#1f78b4", "#b2df84", "#33a02c",
+                  "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00")
+```
+
+###Introduction  
+
+As a result of the events of 9/11, as well as the ongoing accounts of acts of terrorism in the media, we have seen rising national concerns about terrorists using sophisticated weapons (LaFree, Dugan, & Miller., 2015, p. 99). In response to these concerns, the U.S. government has invested more resources in counterterrorism measures, shifting the focus of the FBI from traditional crimes to counterterrorism after 9/11 (LaFree, Dugan, & Miller, 2015, p. 5). Beyond internal measures, Saddam Hussein's association with terrorists and the threat of weapons of mass destruction (WMDs) were the main reasons given in the rationale for the invasion of Iraq in 2003 (Otterman, 2003). An ongoing international concern is the damage terrorists could cause if they obtain WMDs (NATO, 2015). However, the definition of WMDs is unclear (Kaszeta, 2014), so we will look at a more specific group of weapons with the capacity to cause significant damages: chemical, biological, radiological, and nuclear (CBRN) weapons. 
+
+In this activity, we will study the extent to which CBRN weapons have been used so far, and analyze whether or not their past use fits with our perceptions. Have CBRN weapons been used successfully in the past? Which weapons are more historically dangerous (more fatalities, injuries) in the hands of terrorists, common weapons like firearms and explosives or advanced weapons like chemical, biological, and nuclear weapons? What are the implications of past usage of CBRN weapons compared to other weapons in determining our priorities in counter-terrorism policies? 
+
+To answer these questions, we will use the [Global Terrorism Database](http://www.start.umd.edu/gtd) (GTD). The GTD contains information about more than 140,000 terrorist incidents occurring between 1970 and 2014.^1^  The data in the GTD are gathered only from incidences that are reported in the media. The team managing the database verifies the information they gather through multiple news sources (LaFree, Dugan, & Miller, 2015). 
+
+###Part A: Using Summary Statistics and Simple Plots to Identify Key Events
+
+We start by reading in a simplied version of the full Global Trrorism Database.
+
+```{r Eval=TRUE, results='hide'}
+#GTdata <- read.csv("FullGTD.csv", stringsAsFactors=FALSE)
+GTdata <- read.csv("C:/Users/KUIPERS/Desktop/RStudio/CBRN/GTdata.csv")
+#Remove the X column from the dataset
+GTdata <- select(GTdata, -X)
+#View the first 5 rows of each column 
+head(GTdata, 5)
+#View the structure of each column
+str(GTdata)
+```
+
+
+This dataset contains 141,904 incidents and there are 12 columns (variables). Details for each variable are given in the *GTdescription.csv* file. We will create visualizations and summary statistics to get a sense of how frequently attacks involving CBRN weapons occur, the danger they present, and the patterns of CBRN attacks around the world.
+  
+1) Use the dim() command to determine how many CBRN incidents are in the database. Then, create a histogram of attacks per year.
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Create a subset of the original data by restricting it to only CBRN weapons
+CBRNIncidents <- GTdata[GTdata$WeaponType == "CBRN",]
+
+#Number of terrorist incidents
+dim(CBRNIncidents)
+
+#Create a histogram of CBRN incidents by year
+ggplot(CBRNIncidents, aes(x=Year)) + geom_histogram(binwidth=1)
+```
+
+How many CBRN attacks are listed in this dataset? The histogram shows us that there have been attacks during every decade where the GTD has data. However, there have also been some years where there were no CBRN attacks at all. Does the histrogram indicate that the number of CBRN attacks are becoming more frequent in the last 10 years? 
+
+2) Next, tally the number of incidents by region and color the histogram based on these regions.
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Cacluate the number of CBRN terrorist incidents in each region
+summarise( group_by(CBRNIncidents, Region), n=n())
+
+#Color the CBRN incendents histogram by region, with a bin size of 5
+ggplot(CBRNIncidents, aes(x=Year, fill=Region)) + geom_histogram(binwidth=1) 
+
+#A modified version of the previous histogram using our custom colors
+ggplot(CBRNIncidents, aes(x=Year, fill=Region)) + 
+  geom_histogram(binwidth=5) + scale_fill_manual(values=customColors) + 
+  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.text=element_text(size=8))
+```
+
+These histograms show that CBRN attacks occur across the globe: When dividing by region, we can see that all regions experienced at least 10 CBRN attacks. We can also see that most CBRN attacks in the 70s took place in Europe. Where did most CBRN attacks occur between 2010-2014? 
+
+3) The following code can be used to count CBRN attacks by the location that was targeted as well as the number of successful attacks in each group. Notice that a successful attack is defined as an act of terror that was committed, it does not necessarily mean that the terrorists succeeded in their goal.
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Create a new column (with a numeric class) where 1 represents success and 0 represents failure
+CBRNIncidents = mutate(CBRNIncidents,Success2=as.numeric(as.logical(CBRNIncidents$Success=="successful")))
+
+#Verify that a new column, Success2, is numeric. Numeric columns can be summed.
+str(CBRNIncidents)
+
+#Create a table using counts of total incidences, total successful incidences by TargetType, and percent successful
+summarise(group_by(CBRNIncidents, TargetType), TotalCount=n(), SuccessfulCount=sum(Success2),PercentSuccessful=SuccessfulCount/TotalCount)
+```
+
+What TargetType has had the most CBRN attacks? Which TargetType has the lowest percentage of successful attacks? Modify the code above and determine the AttackType that is used in most CBRN attacks.
+
+
+4) After looking at how many attacks occur, we may also be interested in knowing how dangerous these attacks are: How many fatalities or injuries do they cause? We will first investigate fatalities, using sum() to count how many people die from CBRN-related attacks and how many attacks with CBRN weapons caused fatalities. Then we will display the five most deadly attacks with information about their country and year and make a scatterplot of fatalities with year as the X-axis
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Count the number of deaths from terrorist incidents (and take into account missing/NA entries)
+sum(CBRNIncidents$Fatalities, na.rm=TRUE)
+
+#Count the number of attacks that resulted in at least one fatality (and take into account missing/NA entries)
+sum(CBRNIncidents$Fatalities != 0, na.rm=TRUE)
+
+#Create a table with three columns (Year, Country, and number of fatalities), sort the data (from largest number of fatalities to the smallest, and print the 5 cases that resulted in the most deaths from terrorist attacks involving CBRN weapons.
+CBRNIncidents %>%
+  select(Year, Country, Fatalities) %>%
+  arrange(-Fatalities) %>%
+  head(5)
+
+#Creating a scatterplot of fatalities and year
+ggplot(data=CBRNIncidents, aes(x=Year, y=Fatalities)) + 
+      geom_point(size=2) + theme_bw() 
+```
+
+  In the last 45 years CBRN terrorists attacks resulted in 437 fatalities. We also see that 45 CBRN attacks resulted in at least one fatality - about 1/6th of all that were attempted. By looking at the three deadliest incidents and the scatter-plot, we can see that the most deadly incident occured in Uganda in 2000 and is responsible for 200 deaths - nearly half of the deaths attributable to CBRN weapons. Where and when was the CBRN attack that caused the second largest number of fatalities?
+
+5) To find out more about the most deadly incidents, go to [the GTD website](http://www.start.umd.edu/gtd), http://www.start.umd.edu/gtd. Choose **Advanced Search** in the box on the left side of the screen. Use the filters to find what events caused the fatalities in Uganda in 2000. After searching the GTD, we find that there was a mass poisoning in Uganda. Briefly describe what event occured in Columbia. You may notice that the most deadly attacks so far were chemical attacks, suggesing that terrorists have not inflicted a large number of casualties with biological, radiological, or nuclear weapons. 
+
+6) Modify the code in Question 4) to evaluate the number of injuries (*Wounded*) caused by CBRN weapons. Provide a table of the 10 CBRN attacks that caused the most injuries. Create a scatterplot of *Wounded* by Year. From the statistics and graph, are CBRN attacks more likely to injure people or cause fatalities?
+
+7) Use the advanced search at the GTD website to find the event(s) which caused the injuries in these attacks. We find that the attack accounting for the majority the injuries in Japan was an attack on a subway system using the nerve gas sarin, attributed to the doomsday cult Aum Shinrikyo. In contrast, multiple injuries in Afghanistan were caused by a series of attacks: poisonings perpetrated by the Taliban against a variety of targets. What was the cause of the 1984 US attack that caused a large number of injuries? These attacks reinforce what we found with fatalities: most successful attacks with CBRN weapons use chemical weapons,^2^ even though biological, radiological, and nuclear weapons threaten to do damage on a massive scale. 
+
+We've learned that attacks with sophisticated weapons do happen, and on occasion they can cause a considerable number of deaths and injuries. However, we have yet to see any attacks using CBRN weapons such as plagues, dirty bombs, and nuclear strikes that have caused mass injuries or 
+fatalities. In the next section we compare CBRN weapons to other types of weapons.
+
+###Part B: Using Stacked-Line Graphs to Compare Weapon Types
+
+  The stacked-line graph allows us to compare various categorical variables over time. To prepare data for the stacked-line graph, we organize it by year and a category of interest, such as region, religion, weapon, attack type, target, or success. We then count the number of incidents (or fatalities/wounded) in the given year and category. We will start by comparing the number of CBRN to other types of weapons used each year.
+  
+  With some additional modifications, we can change the Y-axis to display percentage, rather than absolute count, or facet by the categories, separating those categories into different graphs. The stacked-line graph allows us to gain a better sense of how CBRN weapons compare to other weapons.
+
+8) We will use ddply() to count the number of (*Incidents*) for each year and weapon type. Then we will plot the graphs separately by faceting by each weapon type.
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Sum the total number incidents for each year and type of weapon
+GTDweap = summarise( group_by(GTdata, Year, WeaponType), Incidents=n())
+
+# Creating a stacked-line graph
+qplot(Year, Incidents, data=GTDweap, fill=WeaponType, geom="area") + 
+  scale_fill_manual(values=customColors) + ylab("Incidents") +
+  facet_wrap(~WeaponType, ncol=3) +
+  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position="bottom", strip.text=element_text(size=10), 
+        legend.text=element_text(size=8), axis.text=element_text(size=7),
+        axis.text.x = element_text(angle = 90))
+```
+
+  Based upon this graph, in what years have most terrorism incidences occured? These graphs underscore the rarity of CBRN weapons. The counts for CBRN weapens are so small in comparison to the others that they nearly invisble. We will modify the Y axis to a maximum of 100, so that we can better see the CBRN weapons.
+  
+  
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+# Creating a stacked-line graph with a y limit of 100
+qplot(Year, Incidents, data=GTDweap, fill=WeaponType, geom="area") + 
+  scale_fill_manual(values=customColors) + ylab("Incidents") +
+  facet_wrap(~WeaponType, ncol=3) + coord_cartesian(ylim = c(0, 100)) +
+  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position="bottom", strip.text=element_text(size=10), 
+        legend.text=element_text(size=8), axis.text=element_text(size=7),
+        axis.text.x = element_text(angle = 90))
+```
+
+
+9)  We can also look at the percent of CBRN incidences each year. We will use ddply() to sum up the total incidents for each year and then find the percentage of incidents each year corresponding with each weapon type.
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Sum the total number incidents for each year
+GTDbyYear = summarise( group_by(GTdata, Year), TotalIncidents=n())
+
+#Merging the two data sets and finding the percentage of incidents by weapon type.
+GTDweap = left_join(GTDweap, GTDbyYear, by="Year")
+GTDweap = mutate(GTDweap, PercentInc = Incidents/TotalIncidents)
+head(GTDweap)
+
+#Graphing a stacked-line graph
+qplot(Year, PercentInc, data=GTDweap, fill=WeaponType, 
+      geom="area") + ylab("Percent Incidents") +
+  scale_fill_manual(values=customColors) + 
+  scale_y_continuous(labels=percent) + 
+  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position="bottom", legend.text=element_text(size=8))
+```
+
+  Notice that the use of CBRN weapons is usually less than 1% of all incidents. Does this support the media image that terrorists regularly rely on sophisticated weapons? Which two weapon types are used most frequently in terrorist attacks?
+
+10) Next we will look at how many deaths were caused by CBRN weapons compared to 
+other weapons. We use the same steps as before, but we now use counts of (*Fatalities*) instead of (*Incidents*). 
+
+```{r Eval=TRUE, results='hide', fig.show='hide'}
+#Sum the total number of deaths (Fatalities) for each year
+GTDdeath = summarise( group_by(GTdata, Year), TotalDeaths=sum(Fatalities, na.rm = TRUE))
+
+#Sum Fatalities by weapon type and year
+GTDweapDeath = summarise( group_by(GTdata, Year, WeaponType),  
+                      Deaths=sum(Fatalities, na.rm = TRUE))
+
+#Merging the two data sets and finding percentage of deaths by weapon type.
+GTDweapDeath <- left_join(GTDweapDeath, GTDdeath, by="Year")
+GTDweapDeath = mutate(GTDweapDeath, PercentDeath = Deaths/TotalDeaths)
+
+#Graphing a stacked-line graph
+qplot(Year, PercentDeath, data=GTDweapDeath, fill=WeaponType, 
+      geom="area") + ylab("Percentage of Fatalities") +
+  scale_fill_manual(values=customColors) + 
+  scale_y_continuous(labels=percent)+ 
+  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position="bottom", legend.text=element_text(size=8))
+```
+
+  Notice there is a small spike in the percentage of CBRN fatalities in 2000, accounting for approximately 5% of the terrorism-related fatalities in that year. Can you identify which event we found earlier that might have caused this? While 200 deaths are hardly insignificant, it is still only a small percentage of all fatalities. Other weapons currently cause a much larger loss of life.
+
+11) Repeat the process with injuries and describe any patterns that you find related to CBRN injuries.
+
+###Part C: Drawing Conclusions from our Graphs
+
+These graphs and the GTD website allowed us to analyze CBRN attacks. We see that they typically resulted in a low number of deaths and injuries, but occasionally produced a considerable number of deaths (200) or injuries (~5500). However, these numbers are far from the millions threatened.
+
+It is worth noting that the most harmful CBRN attacks used chemical weapons (with one exception),2 informing us that attacks with biological, radiological, or nuclear weapons were not attempted or failed. In *Putting Terrorism in Context*, LaFree, Dugan, & Miller confirm that few organizations are willing to adopt biological or chemical weapons (2015, p. 189) and that there are only 13 recorded cases of radiological weapons (out of the then 113,000 cases). There are also no cases of nuclear weapons, in part due to the difficulty of obtaining and weaponizing the materials involved (2015, p. 191).
+
+Using the stacked-graph plot, we were able to see that in terms of incidents, fatalities, and injuries, CBRN weapons are relatively rare compared to firearms and explosives. However, we saw that the attack by Aum Shinrikyo was damaging enough to result in over 1/3 of all the injuries in the year it took place, suggesting that CBRN weapons do have the potential to do significant damage. NATO's webpage "Weapons of Mass Destruction" reinforces that the use of CBRN weapons could produce "incalculable consequences for global stability and prosperity" (2015).
+
+It is important to correct the image that terrorists routinely use sophisticated weapons. Resources are primarily needed in stopping terrorism using common weapons (explosives and firearms), which are currently causing considerably more deaths and injuries. However, given their high potential for damage, we can conclude that it is well worth taking preventative counterterrorism measures against future CBRN attacks.
+
+Since there have been just a few CBRN attacks, it does mean that the first major attack will be difficult to predict. One potential avenue for indirectly anticipating major attacks is looking at what causes terrorist organizations to escalate the caliber of weapons they use. For example, terrorist organizations on the brink of defeat or with doomsday beliefs may be more inclined to use superweapons (Laqueur, 1996). Another avenue is performing case studies on the few organizations which made attempts, similar to the case studies in the Global Terrorism Index report (Institute for Economics and Peace, 2014) on the most dangerous terrorist organizations in 2014. It may be advisable to investigate each type of weapon separately, since patterns of attack with chemical weapons are unlikely to resemble biological weapons which are unlikely to resemble radiological or nuclear weapons. Another sophisticated and highly dangerous weapon raised by Laqueur (1996) is cyber-terrorism, which could cause as much damage as CBRN weapons without the difficulty in procuring and processing materials. Unfortunately, data on cyber-terrorism is not currently available in the GTD.
+
+### Part D: On your Own
+
+Develop your own question of interest and create a graph to address your question. You may also want to go to the Grinnell College RStudio site, http://rstudio.grinnell.edu/, and select the [Global Terrorism Plots](http://rstudio.grinnell.edu/Global_Terrorism_Plots/) (it may take a few seconds to open).^3^ Explore the plots and graphs within this app.  Do you see any interesting patterns when trying different colors, filters, or facets for particular variables of interest? You may also go to the Executive Summary of the Global Terrorism Index report (Institute for Economics and Peace, 2014) (http://www.visionofhumanity.org/sites/default/files/Global%20Terrorism%20Index%20Report%202014_0.pdf) and look for interesting claims that you can investigate. Submit one plot with a brief interpretation.
+
+##### **Endnotes**
+^1^For an incident to be categorized as a terrorist attack and included in this dataset, each incident must meet all three of these attributes 1) The incident must be intentional, 2) The incident must entail some level of violence or immediate threat of violence and 3) The perpetrators of the incidents must be sub-national actors. In addition each incident must include at least two of the following three criteria 1) The act must be aimed at attaining a political, economic, religious, or social goal, 2) There must be evidence of an intention to coerce, intimidate, or convey some other message to a larger audience (or audiences) than the immediate victims and 3) The action must be outside the context of legitimate warfare activities (see the [GTD Codebook]( http://www.start.umd.edu/gtd/downloads/Codebook.pdf) for more details). Data files from 1993 were lost by the company originally managing the database, so data from that year are missing.
+
+^2^One key exception is the 1984 salmonella attack (classified as biological) by the Rajneeshee Cult in Oregon in an attempt to sway an election which injured several hundred people.
+
+^3^In the app version of the scatterplot, each point represents a particular country and year (referred to as a **country-year**), such as all the incidents that occurred in the US in 1984.
+
+^4^ This activity was created by Ying Long, Zachary Segall, and Shonda Kuiper. All rights reserved. Date: 7/25/2015
+
+
+##### **Sources**
+
+Kaszeta, D. (2014, July 29). It is Time to Retire 'Weapons of Mass Destruction'. *Cicero Magazine* Retried from http://ciceromagazine.com/opinion/it-is-time-to-retire-weapons-of-mass-destruction/. 
+
+LaFree, G., Dugan, L., & Miller, E. (2015). *Putting terrorism in context: Lessons from the Global Terrorism Database*. New York, NY: Routledge.
+
+Laqueur, W. (1996). Postmodern Terrorism. *Foreign Affairs, Vol. 75*(no. 5), 
+pp. 24-37. 
+
+National Consortium for the Study of Terrorism and Responses to Terrorism 
+(START). (2013). Global Terrorism Database [Data file]. Retrieved from 
+http://www.start.umd.edu/gtd.
+
+NATO. (2015). *Weapons of Mass Destruction*. Retrieved from http://www.nato.int/cps/en/natohq/topics_50325.htm.
+
+Otterman, S. (2003, April 21). IRAQ: America's Rationale for War. *Backgrounder* Retrieved from http://www.cfr.org/iraq/iraq-americas-rationale-war/p7693#p1.
