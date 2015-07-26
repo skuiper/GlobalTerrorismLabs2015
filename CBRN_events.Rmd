@@ -1,5 +1,5 @@
 ---
-title: "Terrorism and Weapons of Mass Destruction (Solutions)"
+title: "Terrorism and Weapons of Mass Destruction"
 output: word_document
 header-includes: \setlength\parindent{24pt}
 ---
@@ -11,6 +11,7 @@ library(dplyr)
 library(ggplot2)
 library(grid)
 library(scales)
+library(curl)
 
 #Custom color scheme for graphs
 customColors <- c("#a6cee3", "#1f78b4", "#b2df84", "#33a02c",
@@ -30,14 +31,12 @@ To answer these questions, we will use the [Global Terrorism Database](http://ww
 We start by reading in a simplied version of the full Global Trrorism Database.
 
 ```{r Eval=TRUE, results='hide'}
-#GTdata <- read.csv("FullGTD.csv", stringsAsFactors=FALSE)
-GTdata <- read.csv("C:/Users/KUIPERS/Desktop/RStudio/CBRN/GTdata.csv")
-#Remove the X column from the dataset
-GTdata <- select(GTdata, -X)
+GTDdata <- read.csv( curl("https://raw.githubusercontent.com/skuiper/GlobalTerrorismLabs/master/GTdata.csv") )
+
 #View the first 5 rows of each column 
-head(GTdata, 5)
+head(GTDdata, 5)
 #View the structure of each column
-str(GTdata)
+str(GTDdata)
 ```
 
 
@@ -47,7 +46,7 @@ This dataset contains 141,904 incidents and there are 12 columns (variables). De
 
 ```{r Eval=TRUE, results='hide', fig.show='hide'}
 #Create a subset of the original data by restricting it to only CBRN weapons
-CBRNIncidents <- GTdata[GTdata$WeaponType == "CBRN",]
+CBRNIncidents <- GTDdata[GTDdata$WeaponType == "CBRN",]
 
 #Number of terrorist incidents
 dim(CBRNIncidents)
@@ -133,7 +132,7 @@ fatalities. In the next section we compare CBRN weapons to other types of weapon
 
 ```{r Eval=TRUE, results='hide', fig.show='hide'}
 #Sum the total number incidents for each year and type of weapon
-GTDweap = summarise( group_by(GTdata, Year, WeaponType), Incidents=n())
+GTDweap = summarise( group_by(GTDdata, Year, WeaponType), Incidents=n())
 
 # Creating a stacked-line graph
 qplot(Year, Incidents, data=GTDweap, fill=WeaponType, geom="area") + 
@@ -164,7 +163,7 @@ qplot(Year, Incidents, data=GTDweap, fill=WeaponType, geom="area") +
 
 ```{r Eval=TRUE, results='hide', fig.show='hide'}
 #Sum the total number incidents for each year
-GTDbyYear = summarise( group_by(GTdata, Year), TotalIncidents=n())
+GTDbyYear = summarise( group_by(GTDdata, Year), TotalIncidents=n())
 
 #Merging the two data sets and finding the percentage of incidents by weapon type.
 GTDweap = left_join(GTDweap, GTDbyYear, by="Year")
@@ -187,10 +186,10 @@ other weapons. We use the same steps as before, but we now use counts of (*Fatal
 
 ```{r Eval=TRUE, results='hide', fig.show='hide'}
 #Sum the total number of deaths (Fatalities) for each year
-GTDdeath = summarise( group_by(GTdata, Year), TotalDeaths=sum(Fatalities, na.rm = TRUE))
+GTDdeath = summarise( group_by(GTDdata, Year), TotalDeaths=sum(Fatalities, na.rm = TRUE))
 
 #Sum Fatalities by weapon type and year
-GTDweapDeath = summarise( group_by(GTdata, Year, WeaponType),  
+GTDweapDeath = summarise( group_by(GTDdata, Year, WeaponType),  
                       Deaths=sum(Fatalities, na.rm = TRUE))
 
 #Merging the two data sets and finding percentage of deaths by weapon type.
