@@ -128,6 +128,13 @@ CBRNIncidents %>%
   scale_fill_manual(values = customColors) + 
   theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
         legend.text = element_text(size = 8))
+# A different plot that doesn't use stacking or dodging
+CBRNIncidents %>%
+  ggplot(aes(x = Year, colour = Region)) + 
+  geom_freqpoly(binwidth = 5, size=2) + 
+  scale_colour_manual(values = customColors) + 
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.text = element_text(size = 8))
 ```
 
 These histograms show that CBRN attacks occur across the globe: When dividing by region, we can see that all regions experienced at least 10 CBRN attacks. We can also see that most CBRN attacks in the 70s took place in Europe. Where did most CBRN attacks occur between 2010-2014? 
