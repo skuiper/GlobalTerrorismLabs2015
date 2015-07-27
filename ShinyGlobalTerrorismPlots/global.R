@@ -1,14 +1,15 @@
 library(dplyr)
 
 GMdata <- read.csv("finalGM.csv", stringsAsFactors = FALSE)
-GMdata <- select(GMdata, -X)
+# Need to remove the X columns from original datasets so we wouldn't have this extra step!!
+GMdata %<>% select(-X)
 
 GTDdata <- read.csv("FullGTD.csv", stringsAsFactors = FALSE)
-GTDdata <- select(GTDdata, -X)
+GTDdata %<>% select(-X)
 
 
 GTDbyCountryYear <- read.csv("GTDbyCountryYear.csv", stringsAsFactors = FALSE)
-GTDbyCountryYear <- select(GTDbyCountryYear , -X)
+GTDbyCountryYear %<>% select(-X)
 
 
 regionOptions <- c("All" = "all",
