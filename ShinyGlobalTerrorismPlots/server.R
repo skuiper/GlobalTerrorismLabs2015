@@ -1,25 +1,32 @@
 library(shiny)
 library(ggplot2)
 library(dplyr)
-library(plyr)
 library(ggvis)
 library(scales)
 
 ###############################################################################
 
 CalcTotalByFacet <- function(RiverFacets = "none"){
-  #Number of Incidents, Fatalities, and Wounded by Years
+  # Number of Incidents, Fatalities, and Wounded by Years
   FacetVariables <- "Year"
   if(RiverFacets != "none"){
     FacetVariables <- c(FacetVariables, RiverFacets)
   }
   
-  IncidentsByYears <- ddply(GTDdata, FacetVariables, summarise, 
-                              total=length(Success))
-  FatalitiesByYears <- ddply(GTDdata, FacetVariables, summarise, 
-                              total=sum(Fatalities, na.rm = TRUE))
-  WoundedByYears <- ddply(GTDdata, FacetVariables, summarise, 
-                              total=sum(Wounded, na.rm = TRUE))
+  IncidentsByYears <- 
+    GTDdata %>% 
+    group_by_(.dots = FacetVariables) %>%
+    summarise(total=length(Success))
+  
+  FatalitiesByYears <- 
+    GTDdata %>% 
+    group_by_(.dots = FacetVariables) %>%
+    summarise(total = sum(Fatalities, na.rm = TRUE))
+  
+  WoundedByYears <- 
+    GTDdata %>% 
+    group_by_(.dots = FacetVariables) %>%
+    summarise(total = sum(Wounded, na.rm = TRUE))
   
   VariablesByYear <- list("Incidents" = IncidentsByYears,
                           "Fatalities" = FatalitiesByYears,
@@ -42,66 +49,72 @@ shinyServer(function(input, output, clientData, session) {
   # A function to filter the data depending on user's input
   filterDataReactive <- reactive({
     
-    #Data to select from GTD
+    # Data to select from GTD
     fixedVariables <- c("Year", "NumCode", "Region")
     
-    #Filtering the GTDdata
+    # Filtering the GTDdata
     filteredGTD <- GTDdata
     
-    #Option: Colors
+    # Option: Colors
     if(input$ScatterColorby != "none"){
       fixedVariables <- c(fixedVariables, input$ScatterColorby)    
     }
     
-    #Option: Facets
+    # Option: Facets
     if(input$ScatterFacetby != "none"){
       fixedVariables <- c(fixedVariables, input$ScatterFacetby)
     }
     
-    #By years
+    # By years
     filteredGTD <- filteredGTD[filteredGTD$Year >= input$ScatterYear[1] & 
                                  filteredGTD$Year <= input$ScatterYear[2], ]
     
-    #By number of incidents
+    # By number of incidents
     filteredGTD <- filteredGTD[filteredGTD$NumIncidents >= input$ScatterNincidents, ]
     
-    #Option: By attack type
+    # Option: By attack type
     if(input$ScatterAttack != "all"){
       filteredGTD <- filteredGTD[filteredGTD[["AttackType"]] == input$ScatterAttack, ]
     }
     
-    #Option: By target type
+    # Option: By target type
     if(input$ScatterTarget != "all"){
       filteredGTD <- filteredGTD[filteredGTD[["TargetType"]] == input$ScatterTarget, ]
     }
     
-    #Option: By weapon type
+    # Option: By weapon type
     if(input$ScatterWeapon != "all" ){
       filteredGTD <- filteredGTD[filteredGTD[["WeaponType"]] == input$ScatterWeapon, ]
     }
     
-    #Option: By region
+    # Option: By region
     if(input$ScatterRegion != "all"){
       filteredGTD <- filteredGTD[filteredGTD$Region == input$ScatterRegion, ]
     }
     
-    #Option: By success
+    # Option: By success
     if(input$ScatterSuccess){
       filteredGTD <- filteredGTD[filteredGTD$Success == "successful", ]
     }
     
     # Make the Global Terrorism Database by Country-Year depending on the
     # y variable
-    GTDbyCY <- switch(input$ScatterYaxis,
-                      "Incidents" = ddply(filteredGTD, fixedVariables, 
-                                          summarise, YvarGTD=length(Success)),
-                      "Fatalities" = ddply(filteredGTD, fixedVariables, 
-                                           summarise, YvarGTD=sum(Fatalities, na.rm = TRUE)),
-                      "Wounded" = ddply(filteredGTD, fixedVariables, 
-                                        summarise, YvarGTD=sum(Wounded, na.rm = TRUE)) 
-    )
+    GTDbyCY <- 
+      switch(input$ScatterYaxis, 
+             "Incidents" = 
+               filteredGTD %>% 
+               group_by_(.dots=fixedVariables) %>%  
+               summarise(YvarGTD=length(Success)),
+             "Fatalities" = 
+               filteredGTD %>%
+               group_by_(.dots=fixedVariables) %>%  
+               summarise(YvarGTD = sum(Fatalities, na.rm = TRUE)),
+             "Wounded" = filteredGTD %>% 
+               group_by_(.dots=fixedVariables) %>%  
+               summarise(YvarGTD=sum(Wounded, na.rm = TRUE)) 
+      )
     
-    #updateNumericInput(session, "ScatterNumPoints", value=length(GTDbyCY$Year))
+    # updateNumericInput(session, "ScatterNumPoints", value=length(GTDbyCY$Year))
 
     # merge GTD and GM data together to get rid of extra data in GMdata
     merge(GTDbyCY, GMdata, by=c("Year", "NumCode"))
@@ -110,7 +123,7 @@ shinyServer(function(input, output, clientData, session) {
   prepareCurrentData <- reactive({
     GTDandGM <- filterDataReactive()
     
-    #Selects data relevant to user input and assigns uniform names to that
+    # Selects data relevant to user input and assigns uniform names to that
     # data, so the ggvis functions can all use the same names
     currentData <- data.frame("ID" = paste(GTDandGM$Country, GTDandGM$Year),
                               "Country" = GTDandGM$Country,
@@ -121,24 +134,24 @@ shinyServer(function(input, output, clientData, session) {
     numPoints <- sum(complete.cases(currentData))
     updateNumericInput(session, "ScatterNumPoints", value=numPoints)
     
-    #Option: Colors
+    # Option: Colors
     if(input$ScatterColorby != "none"){
       currentData$Color <- GTDandGM[[input$ScatterColorby]]
     }
     
-    #Option: Facets
+    # Option: Facets
     if(input$ScatterFacetby != "none"){
       currentData$currentFacet <- GTDandGM[[input$ScatterFacetby]]
     }
     
-    #Removes missing values
+    # Removes missing values
     currentData = currentData[complete.cases(currentData), ]
     
-    #Ensures that there is a Y-variable if there is no data, so that ggvis
+    # Ensures that there is a Y-variable if there is no data, so that ggvis
     # doesn't throw an error
     if(length(currentData$Year) == 0) currentData$Yvar <- currentData$Yvar + 0
     
-    #Option: Logarithmic scaling, plus one to avoid having zeros in the data
+    # Option: Logarithmic scaling, plus one to avoid having zeros in the data
     if(input$Scatterlogx){
       currentData$Xvar <- log10(currentData$Xvar + 1)
     }
@@ -166,15 +179,15 @@ shinyServer(function(input, output, clientData, session) {
   #############################################################################  
   #     GGVIS CODE
   #############################################################################
-  #Function for showing country-year, x, and y information when hovering over 
-  #data points
+  # Function for showing country-year, x, and y information when hovering over 
+  # data points
   make_data_tooltip <- reactive({
     data_tooltip <- function(point) {
       # Purpose: Generates tooltip text
       if (is.null(point)) return(NULL)
       if (is.null(point$ID)) return(NULL)
       
-      #Adjusts for logs in displaying the X and Y values of the points
+      # Adjusts for logs in displaying the X and Y values of the points
       if(input$Scatterlogx){
         Xval <- round(10 ^ point$Xvar - 1)
       } else {
@@ -190,7 +203,7 @@ shinyServer(function(input, output, clientData, session) {
                  input$ScatterXaxis, "=", Xval, "<br>",
                  input$ScatterYaxis, "=", Yval)
       
-      #Option: Color
+      # Option: Color
       if(input$ScatterColorby != "none"){
         message <- paste0(message, "<br>",
                           input$ScatterColorby, ":", point$Color)
@@ -201,24 +214,24 @@ shinyServer(function(input, output, clientData, session) {
     data_tooltip
   })
   
-  #A reactive expression with the ggvis plot
+  # A reactive expression with the ggvis plot
   vis <- reactive({
     currentData <- prepareCurrentData()
     
-    #Preparing titles for axes
+    # Preparing titles for axes
     XaxisTitle = input$ScatterXaxis
     if(input$Scatterlogx) XaxisTitle <- paste("Log of", XaxisTitle)
     
     YaxisTitle = input$ScatterYaxis
     if(input$Scatterlogy) YaxisTitle <- paste("Log of", YaxisTitle)
     
-    #Creates plot
+    # Creates plot
     currentVis <- currentData %>% 
       ggvis(x = ~Xvar, y = ~Yvar) %>%
       layer_points(fill := "black", size := 50, size.hover := 200,
                    fillOpacity := 1, fillOpacity.hover := 0.5,
                    stroke:= "black", key := ~ID)  %>%
-      #Sets titles for axes
+      # Sets titles for axes
       add_axis("x", title = XaxisTitle, format='d', ticks = 3,
                properties = axis_props(title = list(fontSize = 18))) %>%
       add_axis("y", title = YaxisTitle, format='d', ticks = 3,
@@ -226,7 +239,7 @@ shinyServer(function(input, output, clientData, session) {
       add_tooltip(make_data_tooltip(), "hover") %>%
       set_options(width = 400, height = 400) 
   
-    #Option: color by
+    # Option: color by
     if(input$ScatterColorby != "none"){
       currentVis <- currentVis %>% 
         scale_ordinal('fill', range = customColors) %>%
@@ -240,18 +253,18 @@ shinyServer(function(input, output, clientData, session) {
     currentVis
   })
 
-  #Plots the visualization
+  # Plots the visualization
   bind_shiny(vis, "ggvis1")
   
   #############################################################################  
   #     GGPLOT CODE
   #############################################################################
   
-  #ggplot scatterplot
+  # ggplot scatterplot
   output$ggplot1 <- renderPlot({   
     currentData <- prepareCurrentData()  
     
-    #Preparing titles for axes
+    # Preparing titles for axes
     XaxisTitle = input$ScatterXaxis
     if(input$Scatterlogx) XaxisTitle <- paste("Log of", XaxisTitle)
     
@@ -265,13 +278,13 @@ shinyServer(function(input, output, clientData, session) {
       scale_x_continuous(labels=comma) + scale_y_continuous(labels=comma)  +
       scale_colour_manual(values=customColors)
     
-    #Option: Facets
+    # Option: Facets
     if(input$ScatterFacetby != "none" && length(currentData$Year) != 0){
       currentPlot <- currentPlot + facet_wrap(~currentFacet, ncol=4) + 
         theme(legend.position="right", strip.text=element_text(size=18))
     }
     
-    #Option: Add color by region
+    # Option: Add color by region
     if(input$ScatterColorby != "none"){
       currentPlot <- currentPlot + aes(colour=Color) +
         scale_fill_manual(values=customColors)
@@ -323,7 +336,7 @@ shinyServer(function(input, output, clientData, session) {
   
   output$RiverPlot <- renderPlot({
     
-    #Variable to join GTDOverTime and VariablesByYear (3 dataframes with
+    # Variable to join GTDOverTime and VariablesByYear (3 dataframes with
     # total number of incidents/fatalities/wounded by year and facet, 
     # if applicable)
     if(input$RiverFacets != "none"){
@@ -332,30 +345,39 @@ shinyServer(function(input, output, clientData, session) {
       joinTotalBy <- "Year"   
     }
     
-    #Variables is used in ddply to extract absolute number of incidents, etc.
+    # Variables is used in dplyr operations to extract absolute number of incidents, etc.
     Variables = c(joinTotalBy, input$RiverColors)
     
-    #GTDOverTime is a dataframe with rows as each possible combination of year, 
+    # GTDOverTime is a dataframe with rows as each possible combination of year, 
     # color variable, facet variable (if applicable), and the corresponding 
     # count of the appropriate variable (incidents, fatalities, wounded) 
     # "absolute" references the column which has the absolute counts of 
     # incidents, fatalities, or wounded
-    GTDOverTime <- switch(input$RiverYaxis,
-                          "Incidents" = ddply(GTDdata, Variables, 
-                             summarise, absolute=length(Success)),
-                          "Fatalities" = ddply(GTDdata, Variables, 
-                             summarise, absolute=sum(Fatalities, na.rm = TRUE)),
-                          "Wounded" = ddply(GTDdata, Variables, 
-                             summarise, absolute=sum(Wounded, na.rm = TRUE)))
+    GTDOverTime <- 
+      switch(
+        input$RiverYaxis,
+        "Incidents" = 
+           GTDdata %>% 
+           group_by_(.dots = Variables) %>% 
+           summarise(absolute=length(Success)),
+        "Fatalities" = 
+           GTDdata %>% 
+           group_by_(.dots = Variables) %>% 
+           summarise(absolute=sum(Fatalities, na.rm = TRUE)),
+        "Wounded" = 
+           GTDdata %>%
+           group_by_(.dots = Variables) %>% 
+           summarise(absolute=sum(Wounded, na.rm = TRUE))
+        )
 
-    #Adding the total number of incidents by year (and facet, if applicable)
+    # Adding the total number of incidents by year (and facet, if applicable)
     # and calculating the relative values from the total and absolute
     VariablesByYear <- CalcTotalByFacet(input$RiverFacets)
     GTDOverTime <- left_join(GTDOverTime, VariablesByYear[[input$RiverYaxis]], 
                                by=joinTotalBy) 
     GTDOverTime$relative <- GTDOverTime$absolute / GTDOverTime$total
     
-    #Renaming columns 
+    # Renaming columns 
     names(GTDOverTime)[names(GTDOverTime) == input$RiverColors] <- "Color"  
     
     if(input$RiverFacets != "none" &&
@@ -363,11 +385,11 @@ shinyServer(function(input, output, clientData, session) {
       names(GTDOverTime)[names(GTDOverTime)==input$RiverFacets]<-"currentFacet"
     }
     
-    #Filters by years
+    # Filters by years
     GTDOverTime <- GTDOverTime[GTDOverTime$Year >= input$RiverYears[1] &
                                GTDOverTime$Year <= input$RiverYears[2],  ]
     
-    #Option: Color By
+    # Option: Color By
     if(input$RiverCounts == "P"){
         RiverPlot <- ggplot(data=GTDOverTime, aes(x=Year, y=relative, fill=Color)) +
           geom_area(position = "stack") +
@@ -390,7 +412,7 @@ shinyServer(function(input, output, clientData, session) {
     }
 
     
-   #Option: Facet By
+   # Option: Facet By
    if(input$RiverFacets != "none"){
       if(input$RiverFacets != input$RiverColors){
         RiverPlot <- RiverPlot + facet_wrap(~currentFacet, ncol=4) 
@@ -424,14 +446,14 @@ shinyServer(function(input, output, clientData, session) {
 
   output$BarPlot <- renderPlot({ 
 
-    #Removing year 1993 as an option
+    # Removing year 1993 as an option
     validate(
       if(input$BarYears == 1993){
         "Year 1993 doesn't have data. Please choose another year."
       }
     )
     
-    #Making title for X-axis based on user input
+    # Making title for X-axis based on user input
     if(input$BarRangeType == "Below/Above"){
       XaxisTitle <- "Below/Above n"
     } else {
@@ -439,12 +461,12 @@ shinyServer(function(input, output, clientData, session) {
     }
     XaxisTitle <- paste(XaxisTitle, input$BarYaxis)
     
-    #Option: Color by
+    # Option: Color by
     if(input$BarColor != "none"){
       GTDbyCountryYear$Color <- GTDbyCountryYear[[input$BarColor]]
     }
 
-    #Setting X variable
+    # Setting X variable
     BarYvar <- paste("Num", input$BarYaxis, sep="")
     
     if(input$BarRangeType == "Below/Above"){      
@@ -470,13 +492,13 @@ shinyServer(function(input, output, clientData, session) {
       theme(legend.position="none", axis.title=element_text(size=18)) + 
       xlab(XaxisTitle)
   
-    #Option: Color by
+    # Option: Color by
     if(input$BarColor != "none"){
       currentBarPlot <- currentBarPlot + aes(fill=Color) +
         theme(legend.position="right")
     }
     
-    #Option: Puts count and percentage at the top of bars for Below/Above
+    # Option: Puts count and percentage at the top of bars for Below/Above
     # n incidents without color
     if(input$BarColor == "none" & input$BarRangeType == "Below/Above"){
       currentBarPlot <- currentBarPlot + 
@@ -489,7 +511,7 @@ shinyServer(function(input, output, clientData, session) {
                   stat="bin",colour="#1f78b4")
     }
     
-    #Option: Change Y-axis to percentage
+    # Option: Change Y-axis to percentage
     if(input$BarCounts){     
         if(input$BarRangeType == "Histogram"){
           currentBarPlot <- currentBarPlot + 
@@ -506,7 +528,7 @@ shinyServer(function(input, output, clientData, session) {
     currentBarPlot 
   })
 
-  #Self-updating labels
+  # Self-updating labels
   observe({
     BarYaxisVar <- input$BarYaxis
     
