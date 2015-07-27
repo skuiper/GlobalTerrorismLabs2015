@@ -1,15 +1,11 @@
 library(dplyr)
+library(readr)
 
-GMdata <- read.csv("finalGM.csv", stringsAsFactors = FALSE)
-GMdata <- select(GMdata, -X)
+GMdata <- read_csv("finalGM.csv")
 
-GTDdata <- read.csv("FullGTD.csv", stringsAsFactors = FALSE)
-GTDdata <- select(GTDdata, -X)
+GTDdata <- read_csv("FullGTD.csv")
 
-
-GTDbyCountryYear <- read.csv("GTDbyCountryYear.csv", stringsAsFactors = FALSE)
-GTDbyCountryYear <- select(GTDbyCountryYear , -X)
-
+GTDbyCountryYear <- read_csv("GTDbyCountryYear.csv")
 
 regionOptions <- c("All" = "all",
                    "Middle East & North Africa" = "Middle East & N. Africa",
@@ -91,6 +87,6 @@ GMOptions <- c("Population (millions)" = "PopulationInMillions",
                "Labor Rate" = "LaborRate",
                "Children per Woman" = "ChildrenPerWoman",
                "Electricity per Capita" = "ElectricityPerCapita",
-               "Child Mortality Rate" = "UnderFiveMortality")
+               "Child Mortality Rate" = "ChildMortalityRate")
 
   
