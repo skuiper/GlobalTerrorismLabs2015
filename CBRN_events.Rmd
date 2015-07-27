@@ -1,24 +1,63 @@
 ---
 title: "Terrorism and Weapons of Mass Destruction"
-output: word_document
+output: html_document
 header-includes: \setlength\parindent{24pt}
 ---
 
-```{r message=FALSE, warning=FALSE}
-#Required Files
+```{r message = FALSE, warning = FALSE}
+# Required Packages
 library(plyr)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(grid)
 library(scales)
 library(curl)
 
-#Custom color scheme for graphs
+# Custom color scheme for graphs
 customColors <- c("#a6cee3", "#1f78b4", "#b2df84", "#33a02c",
                   "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00")
 ```
 
-###Introduction  
+### Notes on edits by R Pruim
+
+ * Consistency in coding style is as important as consistency in writing style -- probably more important.  I would edit with an eye toward improving uniformity of style.  Some of my choices are a bit arbitrary, and you might prefer to be consistent in a different way.
+ 
+    * Either (nearly) always or (essentially) never use the `%>%`.  I'm going to use chaining.
+    * I like a space after all `#`s.  But best to always or never use a space there.  I'm adding the space.
+    * Choose `=` or `<-` for assignment.  I like `<-`, but I like `=` better than going back and forth between them. I'm going with `<-`.
+    
+ * Some of your Rmd syntax might not always work or be doing what you intend.  In particular `{r Eval = TRUE}` should be `{r, eval = TRUE}`.  In the newest versions of RStudio, the former will create a label of `Eval = TRUE` rather than set the chunk option.  I've fixed these.   
+ 
+    * Also, setting `eval = TRUE` individually in each chunk is probably not a good idea.  Better to set it globally and omit it in the chunks or define an R variable and set it to that.  Then you change the behavior in one place.
+
+ *  I find that stacked plots are almost never a good way to look at data unless the stacking is of very little importance.  In particular, it is hard to follow any but the lowest item in the stack and big changes in lower elements of the stack can greatly distort the interpretation of high elements. 
+ 
+The example below shows how hard it is to make reliable comparisons between group a and group b and judge what is happening in group c.
+
+ * I've reflowed the comments (look in the code menu for this option).  Long lines in comments don't render well in the code chunks.
+ 
+ * Rather than storing intermediate results, in some places I've simply extended the chaining.
+ 
+```{r}
+ddd <- 
+  data.frame(x = 0:10) %>% 
+  mutate(
+    a = 25 - (5-x)^2 + rnorm(11, sd = 1), 
+    b = 25 - (5-x)^2 + rnorm(11, sd = 3), 
+    c = 10 + rnorm(11, sd = .4)
+    ) %>%
+  gather(group, y, -x) 
+ddd %>%
+  ggplot(aes(x = x, y = y, fill = group)) +
+  geom_area()
+ddd %>%
+  ggplot(aes(x = x, y = y, color = group)) +
+  geom_line()
+```
+
+
+### Introduction  
 
 As a result of the events of 9/11, as well as the ongoing accounts of acts of terrorism in the media, we have seen rising national concerns about terrorists using sophisticated weapons (LaFree, Dugan, & Miller., 2015, p. 99). In response to these concerns, the U.S. government has invested more resources in counterterrorism measures, shifting the focus of the FBI from traditional crimes to counterterrorism after 9/11 (LaFree, Dugan, & Miller, 2015, p. 5). Beyond internal measures, Saddam Hussein's association with terrorists and the threat of weapons of mass destruction (WMDs) were the main reasons given in the rationale for the invasion of Iraq in 2003 (Otterman, 2003). An ongoing international concern is the damage terrorists could cause if they obtain WMDs (NATO, 2015). However, the definition of WMDs is unclear (Kaszeta, 2014), so we will look at a more specific group of weapons with the capacity to cause significant damages: chemical, biological, radiological, and nuclear (CBRN) weapons. 
 
@@ -26,66 +65,90 @@ In this activity, we will study the extent to which CBRN weapons have been used 
 
 To answer these questions, we will use the [Global Terrorism Database](http://www.start.umd.edu/gtd) (GTD). The GTD contains information about more than 140,000 terrorist incidents occurring between 1970 and 2014.^1^  The data in the GTD are gathered only from incidences that are reported in the media. The team managing the database verifies the information they gather through multiple news sources (LaFree, Dugan, & Miller, 2015). 
 
-###Part A: Using Summary Statistics and Simple Plots to Identify Key Events
+### Part A: Using Summary Statistics and Simple Plots to Identify Key Events
 
 We start by reading in a simplied version of the full Global Trrorism Database.
 
-```{r Eval=TRUE, results='hide'}
-GTDdata <- read.csv( curl("https://raw.githubusercontent.com/skuiper/GlobalTerrorismLabs/master/GTdata.csv") )
+```{r, eval = TRUE, results = 'hide'}
+require(readr)
+GTDdata <- read_csv( curl("https://raw.githubusercontent.com/skuiper/GlobalTerrorismLabs/master/GTdata.csv") )
 
-#View the first 5 rows of each column 
+# View the first 5 rows of each column 
 head(GTDdata, 5)
-#View the structure of each column
-str(GTDdata)
+# View the structure of each column
+glimpse(GTDdata)
 ```
 
 
 This dataset contains 141,904 incidents and there are 12 columns (variables). Details for each variable are given in the *GTdescription.csv* file. We will create visualizations and summary statistics to get a sense of how frequently attacks involving CBRN weapons occur, the danger they present, and the patterns of CBRN attacks around the world.
   
-1) Use the dim() command to determine how many CBRN incidents are in the database. Then, create a histogram of attacks per year.
+1) Use the `nrow()` command to determine how many CBRN incidents are in the database. Then, create a histogram of attacks per year.
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Create a subset of the original data by restricting it to only CBRN weapons
-CBRNIncidents <- GTDdata[GTDdata$WeaponType == "CBRN",]
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Create a subset of the original data by restricting it to only CBRN weapons
+# CBRNIncidents <- GTDdata[GTDdata$WeaponType == "CBRN",]
+CBRNIncidents <- 
+  GTDdata %>% filter(WeaponType == "CBRN")
 
-#Number of terrorist incidents
-dim(CBRNIncidents)
+# Number of terrorist incidents
+nrow(CBRNIncidents)
 
-#Create a histogram of CBRN incidents by year
-ggplot(CBRNIncidents, aes(x=Year)) + geom_histogram(binwidth=1)
+# Create a histogram of CBRN incidents by year
+CBRNIncidents %>% 
+  ggplot(aes(x = Year)) + geom_histogram(binwidth = 1)
+
+# Alternative syntax for histogram.  Could use this throughout.
+CBRNIncidents %>% 
+  ggplot(aes(x = Year)) + geom_histogram(binwidth = 1)
 ```
 
 How many CBRN attacks are listed in this dataset? The histogram shows us that there have been attacks during every decade where the GTD has data. However, there have also been some years where there were no CBRN attacks at all. Does the histrogram indicate that the number of CBRN attacks are becoming more frequent in the last 10 years? 
 
 2) Next, tally the number of incidents by region and color the histogram based on these regions.
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Cacluate the number of CBRN terrorist incidents in each region
-summarise( group_by(CBRNIncidents, Region), n=n())
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Cacluate the number of CBRN terrorist incidents in each region
+# summarise(group_by(CBRNIncidents, Region), n = n())
+# This syntax is easier to read
+CBRNIncidents %>% 
+  group_by(Region) %>%
+  summarise(n = n())
 
-#Color the CBRN incendents histogram by region, with a bin size of 5
-ggplot(CBRNIncidents, aes(x=Year, fill=Region)) + geom_histogram(binwidth=1) 
+# Color the CBRN incendents histogram by region, with a bin size of 5
+CBRNIncidents %>%
+  ggplot(aes(x = Year, fill = Region)) + 
+  geom_histogram(binwidth = 1) 
 
-#A modified version of the previous histogram using our custom colors
-ggplot(CBRNIncidents, aes(x=Year, fill=Region)) + 
-  geom_histogram(binwidth=5) + scale_fill_manual(values=customColors) + 
-  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
-        legend.text=element_text(size=8))
+# A modified version of the previous histogram using our custom colors
+CBRNIncidents %>%
+  ggplot(aes(x = Year, fill = Region)) + 
+  geom_histogram(binwidth = 5) + 
+  scale_fill_manual(values = customColors) + 
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.text = element_text(size = 8))
 ```
 
 These histograms show that CBRN attacks occur across the globe: When dividing by region, we can see that all regions experienced at least 10 CBRN attacks. We can also see that most CBRN attacks in the 70s took place in Europe. Where did most CBRN attacks occur between 2010-2014? 
 
 3) The following code can be used to count CBRN attacks by the location that was targeted as well as the number of successful attacks in each group. Notice that a successful attack is defined as an act of terror that was committed, it does not necessarily mean that the terrorists succeeded in their goal.
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Create a new column (with a numeric class) where 1 represents success and 0 represents failure
-CBRNIncidents = mutate(CBRNIncidents,Success2=as.numeric(as.logical(CBRNIncidents$Success=="successful")))
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Create a new column where TRUE represents success and FALSE represents failure
+CBRNIncidents <-
+  CBRNIncidents %>%
+  mutate(Success2 = Success =="successful")
 
-#Verify that a new column, Success2, is numeric. Numeric columns can be summed.
-str(CBRNIncidents)
+# Verify that a new column, Success2, is numeric. Numeric columns can be summed.
+glimpse(CBRNIncidents)
 
-#Create a table using counts of total incidences, total successful incidences by TargetType, and percent successful
-summarise(group_by(CBRNIncidents, TargetType), TotalCount=n(), SuccessfulCount=sum(Success2),PercentSuccessful=SuccessfulCount/TotalCount)
+# Create a table using counts of total incidences, total successful incidences
+# by TargetType, and percent successful
+CBRNIncidents %>%
+  group_by(TargetType) %>%
+  summarise(
+    TotalCount = n(), 
+    SuccessfulCount = sum(Success2),
+    PercentSuccessful = SuccessfulCount/TotalCount)
 ```
 
 What TargetType has had the most CBRN attacks? Which TargetType has the lowest percentage of successful attacks? Modify the code above and determine the AttackType that is used in most CBRN attacks.
@@ -93,22 +156,31 @@ What TargetType has had the most CBRN attacks? Which TargetType has the lowest p
 
 4) After looking at how many attacks occur, we may also be interested in knowing how dangerous these attacks are: How many fatalities or injuries do they cause? We will first investigate fatalities, using sum() to count how many people die from CBRN-related attacks and how many attacks with CBRN weapons caused fatalities. Then we will display the five most deadly attacks with information about their country and year and make a scatterplot of fatalities with year as the X-axis
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Count the number of deaths from terrorist incidents (and take into account missing/NA entries)
-sum(CBRNIncidents$Fatalities, na.rm=TRUE)
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Count the number of deaths from terrorist incidents (and take into account
+# missing/NA entries)
+CBRNIncidents %>%
+  summarise(TotalFatalities = sum(Fatalities, na.rm = TRUE))
 
-#Count the number of attacks that resulted in at least one fatality (and take into account missing/NA entries)
-sum(CBRNIncidents$Fatalities != 0, na.rm=TRUE)
+# Count the number of attacks that did/did not result in at least one fatality 
+# (and take into account missing/NA entries)
+CBRNIncidents %>%
+  group_by(Fatalities > 0) %>%
+  summarise(n = n())
 
-#Create a table with three columns (Year, Country, and number of fatalities), sort the data (from largest number of fatalities to the smallest, and print the 5 cases that resulted in the most deaths from terrorist attacks involving CBRN weapons.
+# Create a table with three columns (Year, Country, and number of fatalities),
+# sort the data (from largest number of fatalities to the smallest, and print
+# the 5 cases that resulted in the most deaths from terrorist attacks involving
+# CBRN weapons.
 CBRNIncidents %>%
   select(Year, Country, Fatalities) %>%
   arrange(-Fatalities) %>%
   head(5)
 
-#Creating a scatterplot of fatalities and year
-ggplot(data=CBRNIncidents, aes(x=Year, y=Fatalities)) + 
-      geom_point(size=2) + theme_bw() 
+# Creating a scatterplot of fatalities and year
+CBRNIncidents %>%
+  ggplot(aes(x = Year, y = Fatalities)) + 
+  geom_point(size = 3, alpha = 0.25) + theme_bw() 
 ```
 
   In the last 45 years CBRN terrorists attacks resulted in 437 fatalities. We also see that 45 CBRN attacks resulted in at least one fatality - about 1/6th of all that were attempted. By looking at the three deadliest incidents and the scatter-plot, we can see that the most deadly incident occured in Uganda in 2000 and is responsible for 200 deaths - nearly half of the deaths attributable to CBRN weapons. Where and when was the CBRN attack that caused the second largest number of fatalities?
@@ -122,7 +194,7 @@ ggplot(data=CBRNIncidents, aes(x=Year, y=Fatalities)) +
 We've learned that attacks with sophisticated weapons do happen, and on occasion they can cause a considerable number of deaths and injuries. However, we have yet to see any attacks using CBRN weapons such as plagues, dirty bombs, and nuclear strikes that have caused mass injuries or 
 fatalities. In the next section we compare CBRN weapons to other types of weapons.
 
-###Part B: Using Stacked-Line Graphs to Compare Weapon Types
+### Part B: Using Stacked-Line Graphs to Compare Weapon Types
 
   The stacked-line graph allows us to compare various categorical variables over time. To prepare data for the stacked-line graph, we organize it by year and a category of interest, such as region, religion, weapon, attack type, target, or success. We then count the number of incidents (or fatalities/wounded) in the given year and category. We will start by comparing the number of CBRN to other types of weapons used each year.
   
@@ -130,53 +202,78 @@ fatalities. In the next section we compare CBRN weapons to other types of weapon
 
 8) We will use ddply() to count the number of (*Incidents*) for each year and weapon type. Then we will plot the graphs separately by faceting by each weapon type.
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Sum the total number incidents for each year and type of weapon
-GTDweap = summarise( group_by(GTDdata, Year, WeaponType), Incidents=n())
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Sum the total number incidents for each year and type of weapon
+GTDweap <- 
+  GTDdata %>%
+  group_by(Year, WeaponType) %>% 
+  summarise(Incidents = n())
 
 # Creating a stacked-line graph
-qplot(Year, Incidents, data=GTDweap, fill=WeaponType, geom="area") + 
-  scale_fill_manual(values=customColors) + ylab("Incidents") +
-  facet_wrap(~WeaponType, ncol=3) +
-  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
-        legend.position="bottom", strip.text=element_text(size=10), 
-        legend.text=element_text(size=8), axis.text=element_text(size=7),
+GTDweap %>%
+  ggplot(aes(x = Year, y = Incidents, fill = WeaponType)) +
+  geom_area() +
+  scale_fill_manual(values = customColors) + ylab("Incidents") +
+  facet_wrap(~WeaponType, ncol = 3) +
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position = "bottom", strip.text = element_text(size = 10), 
+        legend.text = element_text(size = 8), axis.text = element_text(size = 7),
         axis.text.x = element_text(angle = 90))
 ```
 
   Based upon this graph, in what years have most terrorism incidences occured? These graphs underscore the rarity of CBRN weapons. The counts for CBRN weapens are so small in comparison to the others that they nearly invisble. We will modify the Y axis to a maximum of 100, so that we can better see the CBRN weapons.
   
   
-```{r Eval=TRUE, results='hide', fig.show='hide'}
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
 # Creating a stacked-line graph with a y limit of 100
-qplot(Year, Incidents, data=GTDweap, fill=WeaponType, geom="area") + 
-  scale_fill_manual(values=customColors) + ylab("Incidents") +
-  facet_wrap(~WeaponType, ncol=3) + coord_cartesian(ylim = c(0, 100)) +
-  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
-        legend.position="bottom", strip.text=element_text(size=10), 
-        legend.text=element_text(size=8), axis.text=element_text(size=7),
+GTDweap %>%
+  ggplot(aes(Year, Incidents, fill = WeaponType)) +
+  geom_area() +
+  scale_fill_manual(values = customColors) + ylab("Incidents") +
+  facet_wrap(~WeaponType, ncol = 3) + 
+  coord_cartesian(ylim = c(0, 100)) +
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position = "bottom", strip.text = element_text(size = 10), 
+        legend.text = element_text(size = 8), axis.text = element_text(size = 7),
         axis.text.x = element_text(angle = 90))
 ```
 
 
 9)  We can also look at the percent of CBRN incidences each year. We will use ddply() to sum up the total incidents for each year and then find the percentage of incidents each year corresponding with each weapon type.
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Sum the total number incidents for each year
-GTDbyYear = summarise( group_by(GTDdata, Year), TotalIncidents=n())
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Sum the total number incidents for each year
+GTDbyYear <-
+  GTDdata %>%
+  group_by(Year) %>%
+  summarise(TotalIncidents = n())
 
-#Merging the two data sets and finding the percentage of incidents by weapon type.
-GTDweap = left_join(GTDweap, GTDbyYear, by="Year")
-GTDweap = mutate(GTDweap, PercentInc = Incidents/TotalIncidents)
+# Merging the two data sets and finding the percentage of incidents by weapon type.
+GTDweap <-
+  GTDweap %>% 
+  left_join(GTDbyYear, by = "Year") %>%
+  mutate(PercentInc = Incidents/TotalIncidents)
 head(GTDweap)
 
-#Graphing a stacked-line graph
-qplot(Year, PercentInc, data=GTDweap, fill=WeaponType, 
-      geom="area") + ylab("Percent Incidents") +
-  scale_fill_manual(values=customColors) + 
-  scale_y_continuous(labels=percent) + 
-  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
-        legend.position="bottom", legend.text=element_text(size=8))
+# Graphing a stacked-line graph
+GTDweap %>%
+  ggplot(aes(Year, PercentInc, fill = WeaponType)) +
+  geom_area() +
+  ylab("Percent Incidents") +
+  scale_fill_manual(values = customColors) + 
+  scale_y_continuous(labels = percent) + 
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position = "bottom", legend.text = element_text(size = 8))
+
+# It's easier to compare components if we don't stack.
+GTDweap %>%
+  ggplot(aes(Year, PercentInc, color = WeaponType)) +
+  geom_line(size = 2, alpha = 0.7) +
+  ylab("Percent Incidents") +
+  scale_color_manual(values = customColors) + 
+  scale_y_continuous(labels = percent) + 
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position = "bottom", legend.text = element_text(size = 8))
 ```
 
   Notice that the use of CBRN weapons is usually less than 1% of all incidents. Does this support the media image that terrorists regularly rely on sophisticated weapons? Which two weapon types are used most frequently in terrorist attacks?
@@ -184,32 +281,41 @@ qplot(Year, PercentInc, data=GTDweap, fill=WeaponType,
 10) Next we will look at how many deaths were caused by CBRN weapons compared to 
 other weapons. We use the same steps as before, but we now use counts of (*Fatalities*) instead of (*Incidents*). 
 
-```{r Eval=TRUE, results='hide', fig.show='hide'}
-#Sum the total number of deaths (Fatalities) for each year
-GTDdeath = summarise( group_by(GTDdata, Year), TotalDeaths=sum(Fatalities, na.rm = TRUE))
+```{r, eval = TRUE, results = 'hide', fig.show = 'hide'}
+# Sum the total number of deaths (Fatalities) for each year
+GTDdeath <-
+  GTDdata %>%
+  group_by(Year) %>%
+  summarise(TotalDeaths = sum(Fatalities, na.rm = TRUE)) 
 
-#Sum Fatalities by weapon type and year
-GTDweapDeath = summarise( group_by(GTDdata, Year, WeaponType),  
-                      Deaths=sum(Fatalities, na.rm = TRUE))
+# Sum Fatalities by weapon type and year
+GTDweapDeath <-
+  GTDdata %>% 
+  group_by(Year, WeaponType) %>%
+  summarise(Deaths = sum(Fatalities, na.rm = TRUE))
 
-#Merging the two data sets and finding percentage of deaths by weapon type.
-GTDweapDeath <- left_join(GTDweapDeath, GTDdeath, by="Year")
-GTDweapDeath = mutate(GTDweapDeath, PercentDeath = Deaths/TotalDeaths)
+# Merging the two data sets and finding percentage of deaths by weapon type.
+GTDweapDeath <- 
+  GTDweapDeath %>% 
+  left_join(GTDdeath, by = "Year") %>%
+  mutate(PercentDeath = Deaths/TotalDeaths)
 
-#Graphing a stacked-line graph
-qplot(Year, PercentDeath, data=GTDweapDeath, fill=WeaponType, 
-      geom="area") + ylab("Percentage of Fatalities") +
-  scale_fill_manual(values=customColors) + 
-  scale_y_continuous(labels=percent)+ 
-  theme(legend.title=element_blank(), legend.key.size = unit(.5, "cm"), 
-        legend.position="bottom", legend.text=element_text(size=8))
+# Graphing a stacked-line graph
+GTDweapDeath %>%
+  ggplot(aes(Year, PercentDeath, fill = WeaponType)) + 
+  geom_area() +
+  ylab("Percentage of Fatalities") +
+  scale_fill_manual(values = customColors) + 
+  scale_y_continuous(labels = percent) + 
+  theme(legend.title = element_blank(), legend.key.size = unit(.5, "cm"), 
+        legend.position = "bottom", legend.text = element_text(size = 8))
 ```
 
   Notice there is a small spike in the percentage of CBRN fatalities in 2000, accounting for approximately 5% of the terrorism-related fatalities in that year. Can you identify which event we found earlier that might have caused this? While 200 deaths are hardly insignificant, it is still only a small percentage of all fatalities. Other weapons currently cause a much larger loss of life.
 
 11) Repeat the process with injuries and describe any patterns that you find related to CBRN injuries.
 
-###Part C: Drawing Conclusions from our Graphs
+### Part C: Drawing Conclusions from our Graphs
 
 These graphs and the GTD website allowed us to analyze CBRN attacks. We see that they typically resulted in a low number of deaths and injuries, but occasionally produced a considerable number of deaths (200) or injuries (~5500). However, these numbers are far from the millions threatened.
 
